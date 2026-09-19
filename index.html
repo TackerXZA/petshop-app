@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PawPaw Pet Food Store - ร้านอาหารสัตว์เลี้ยงออนไลน์</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Kanit', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen flex flex-col">
+
+<!-- Header Navigation -->
+<header class="bg-amber-500 text-white sticky top-0 z-40 shadow-md">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+        <div class="flex items-center gap-3">
+            <div class="bg-white text-amber-500 p-2 rounded-full shadow">
+                <i class="fa-solid fa-paw text-2xl"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold tracking-wide leading-tight">PawPaw PetShop</h1>
+                <p class="text-xs text-amber-100">อาหารและอุปกรณ์สัตว์เลี้ยงคุณภาพสูง</p>
+            </div>
+        </div>
+
+        <!-- Search & Cart -->
+        <div class="flex items-center gap-4">
+            <div class="relative hidden md:block">
+                <input type="text" id="search-input" onkeyup="handleSearch()" placeholder="ค้นหาชื่ออาหารสัตว์..."
+                       class="pl-9 pr-4 py-1.5 rounded-full text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-amber-300 w-64">
+                <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-sm"></i>
+            </div>
+
+            <button onclick="toggleCartModal()" class="relative bg-amber-600 hover:bg-amber-700 px-4 py-2 rounded-full flex items-center gap-2 transition shadow">
+                <i class="fa-solid fa-cart-shopping"></i>
+                <span class="font-medium text-sm hidden sm:inline">ตะกร้า</span>
+                <span id="cart-count" class="bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">0</span>
+            </button>
+        </div>
+    </div>
+</header>
+
+<!-- Cloudflare Tunnel Banner -->
+<div class="bg-slate-800 text-slate-200 text-xs py-1.5 px-4 text-center flex justify-center items-center gap-2">
+    <span class="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+    <span id="tunnel-status-text">เชื่อมต่อ API ผ่าน Cloudflare Tunnel</span>
+</div>
+
+<!-- Main Content Container -->
+<main class="max-w-7xl mx-auto px-4 py-6 flex-grow w-full">
+
+    <!-- Category Filter Buttons -->
+    <div class="flex gap-2 overflow-x-auto pb-4 mb-6 scrollbar-none">
+        <button onclick="filterCategory('all', event)" class="cat-btn bg-amber-500 text-white px-4 py-2 rounded-xl text-sm font-medium shrink-0 transition shadow-sm hover:bg-amber-600">
+            🐶🐱 ทั้งหมด
+        </button>
+        <button onclick="filterCategory('dog', event)" class="cat-btn bg-white text-slate-700 px-4 py-2 rounded-xl text-sm font-medium shrink-0 transition border hover:bg-amber-50">
+            🐶 อาหารสุนัข
+        </button>
+        <button onclick="filterCategory('cat', event)" class="cat-btn bg-white text-slate-700 px-4 py-2 rounded-xl text-sm font-medium shrink-0 transition border hover:bg-amber-50">
+            🐱 อาหารแมว
+        </button>
+        <button onclick="filterCategory('small', event)" class="cat-btn bg-white text-slate-700 px-4 py-2 rounded-xl text-sm font-medium shrink-0 transition border hover:bg-amber-50">
+            🐰 กระต่าย / สัตว์เล็ก
+        </button>
+        <button onclick="filterCategory('bird', event)" class="cat-btn bg-white text-slate-700 px-4 py-2 rounded-xl text-sm font-medium shrink-0 transition border hover:bg-amber-50">
+            🦜 อาหารนก
+        </button>
+        <button onclick="filterCategory('fish', event)" class="cat-btn bg-white text-slate-700 px-4 py-2 rounded-xl text-sm font-medium shrink-0 transition border hover:bg-amber-50">
+            🐟 อาหารปลา
+        </button>
+    </div>
+
+    <!-- Products Grid -->
+    <div id="product-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        <!-- Render products dynamically -->
+    </div>
+</main>
+
+<!-- Cart Modal Drawer -->
+<div id="cart-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden transition-opacity">
+    <div class="fixed right-0 top-0 h-full w-full max-w-md bg-white shadow-2xl flex flex-col">
+        <div class="p-4 bg-amber-500 text-white flex justify-between items-center">
+            <h3 class="font-bold text-lg flex items-center gap-2">
+                <i class="fa-solid fa-basket-shopping"></i> ตะกร้าสินค้าของคุณ
+            </h3>
+            <button onclick="toggleCartModal()" class="text-white hover:text-amber-200 text-xl font-bold px-2">✕</button>
+        </div>
+
+        <!-- Cart Items List -->
+        <div id="cart-items" class="p-4 flex-grow overflow-y-auto divide-y divide-slate-100">
+            <p class="text-center text-slate-400 py-10">ยังไม่มีสินค้าในตะกร้า</p>
+        </div>
+
+        <!-- Cart Footer -->
+        <div class="p-4 bg-slate-50 border-t border-slate-200">
+            <div class="flex justify-between items-center mb-4">
+                <span class="text-slate-600 font-medium">ราคารวมทั้งหมด:</span>
+                <span id="cart-total" class="text-xl font-bold text-emerald-600">0 บาท</span>
+            </div>
+            <button onclick="checkout()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white py-3 rounded-xl font-bold transition shadow flex justify-center items-center gap-2">
+                <i class="fa-solid fa-qrcode"></i> ชำระเงิน / สแกน QR Code
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Payment QR Modal -->
+<div id="qr-modal" class="fixed inset-0 bg-black/60 z-50 hidden flex justify-center items-center p-4">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-6 text-center shadow-2xl relative">
+        <button onclick="closeQrModal()" class="absolute right-4 top-4 text-slate-400 hover:text-slate-600">✕</button>
+        <div class="bg-blue-900 text-white py-2 rounded-t-xl font-bold mb-4">PromptPay QR Payment</div>
+        <p class="text-xs text-slate-500 mb-2">หมายเลขออเดอร์: <span id="order-id" class="font-mono font-bold text-slate-700"></span></p>
+
+        <div class="bg-white p-3 border-2 border-slate-200 rounded-xl inline-block mb-3">
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=PROMPTPAY_PAYMENT_MOCK" alt="PromptPay QR" class="w-44 h-44 mx-auto">
+        </div>
+
+        <p class="text-sm font-semibold text-slate-700">ยอดที่ต้องชำระ</p>
+        <p id="qr-total" class="text-2xl font-extrabold text-emerald-600 mb-4"></p>
+
+        <button onclick="confirmPayment()" class="w-full bg-amber-500 hover:bg-amber-600 text-white py-2.5 rounded-xl font-bold transition shadow">
+            ยืนยันการชำระเงินเรียบร้อย
+        </button>
+    </div>
+</div>
+
+<!-- Script Application Logic -->
+<script>
+    // 🌐 นำ Domain ที่ได้จาก Cloudflare Tunnel มาวางใส่ในตัวแปรนี้
+    const CLOUDFLARE_TUNNEL_URL = 'https://fires-rolling-civil-courier.trycloudflare.com';
+
+    let allProducts = [];
+    let cart = [];
+    let currentCategory = 'all';
+
+    // โหลดข้อมูลสินค้าเมื่อเริ่มต้น (เรียกผ่าน Cloudflare Tunnel)
+    async function fetchProducts() {
+        try {
+            const response = await fetch(`${CLOUDFLARE_TUNNEL_URL}/api/products`);
+            allProducts = await response.json();
+            renderProducts(allProducts);
+            document.getElementById('tunnel-status-text').innerText = `เชื่อมต่อ API สำเร็จ: ${CLOUDFLARE_TUNNEL_URL}`;
+        } catch (err) {
+            console.error('Fetch error:', err);
+            document.getElementById('product-grid').innerHTML = `
+                <div class="col-span-full text-center text-red-500 py-12">
+                    ⚠️ ไม่สามารถเชื่อมต่อกับ Cloudflare Tunnel ได้ กรุณาเช็คตัวแปร CLOUDFLARE_TUNNEL_URL
+                </div>
+            `;
+        }
+    }
+
+    // แสดงผลรายการสินค้า
+    function renderProducts(products) {
+        const container = document.getElementById('product-grid');
+        if (products.length === 0) {
+            container.innerHTML = `<div class="col-span-full text-center text-slate-400 py-12">ไม่พบสินค้าในหมวดหมู่นี้</div>`;
+            return;
+        }
+
+        container.innerHTML = products.map(item => `
+            <div class="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition border border-slate-100 flex flex-col">
+                <img src="${item.image}" alt="${item.name}" class="h-44 w-full object-cover">
+                <div class="p-4 flex flex-col flex-grow">
+                    <div class="flex items-center gap-1 text-amber-400 text-xs mb-1">
+                        <i class="fa-solid fa-star"></i>
+                        <span class="text-slate-600 font-medium">${item.rating}</span>
+                    </div>
+                    <h3 class="font-semibold text-slate-800 text-sm leading-snug line-clamp-2 mb-2 flex-grow">${item.name}</h3>
+                    <div class="flex justify-between items-center mt-3 pt-3 border-t border-slate-100">
+                        <div>
+                            <span class="text-xs text-slate-400">ราคา</span>
+                            <p class="text-lg font-bold text-amber-600">${item.price} ฿</p>
+                        </div>
+                        <button onclick="addToCart(${item.id})" class="bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition flex items-center gap-1 shadow-sm">
+                            <i class="fa-solid fa-plus"></i> ใส่ตะกร้า
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    // กรองหมวดหมู่ (เรียกผ่าน Cloudflare Tunnel)
+    async function filterCategory(category, evt) {
+        currentCategory = category;
+        document.querySelectorAll('.cat-btn').forEach(btn => {
+            btn.classList.remove('bg-amber-500', 'text-white');
+            btn.classList.add('bg-white', 'text-slate-700');
+        });
+        if (evt && evt.currentTarget) {
+            evt.currentTarget.classList.remove('bg-white', 'text-slate-700');
+            evt.currentTarget.classList.add('bg-amber-500', 'text-white');
+        }
+
+        try {
+            const res = await fetch(`${CLOUDFLARE_TUNNEL_URL}/api/products?category=${category}`);
+            const data = await res.json();
+            renderProducts(data);
+        } catch (err) {
+            console.error('Filter error:', err);
+        }
+    }
+
+    // ค้นหาแบบเรียลไทม์
+    function handleSearch() {
+        const query = document.getElementById('search-input').value.toLowerCase();
+        const filtered = allProducts.filter(p => p.name.toLowerCase().includes(query));
+        renderProducts(filtered);
+    }
+
+    // เพิ่มสินค้าเข้าตะกร้า
+    function addToCart(productId) {
+        const product = allProducts.find(p => p.id === productId);
+        const exist = cart.find(item => item.id === productId);
+
+        if (exist) {
+            exist.qty += 1;
+        } else {
+            cart.push({ ...product, qty: 1 });
+        }
+        updateCartUI();
+    }
+
+    // อัปเดต UI ตะกร้าสินค้า
+    function updateCartUI() {
+        const cartCount = document.getElementById('cart-count');
+        const cartItems = document.getElementById('cart-items');
+        const cartTotal = document.getElementById('cart-total');
+
+        const totalQty = cart.reduce((sum, item) => sum + item.qty, 0);
+        const totalPrice = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+
+        cartCount.innerText = totalQty;
+        cartTotal.innerText = totalPrice.toLocaleString() + ' บาท';
+
+        if (cart.length === 0) {
+            cartItems.innerHTML = '<p class="text-center text-slate-400 py-10">ยังไม่มีสินค้าในตะกร้า</p>';
+            return;
+        }
+
+        cartItems.innerHTML = cart.map(item => `
+            <div class="py-3 flex items-center justify-between gap-2">
+                <div class="flex items-center gap-3">
+                    <img src="${item.image}" class="w-12 h-12 object-cover rounded-lg">
+                    <div>
+                        <p class="font-medium text-xs text-slate-800 line-clamp-1">${item.name}</p>
+                        <p class="text-amber-600 font-bold text-sm">${item.price} ฿</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="changeQty(${item.id}, -1)" class="w-6 h-6 bg-slate-100 rounded text-slate-600 font-bold hover:bg-slate-200">-</button>
+                    <span class="text-xs font-semibold">${item.qty}</span>
+                    <button onclick="changeQty(${item.id}, 1)" class="w-6 h-6 bg-slate-100 rounded text-slate-600 font-bold hover:bg-slate-200">+</button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function changeQty(id, delta) {
+        const item = cart.find(i => i.id === id);
+        if (!item) return;
+        item.qty += delta;
+        if (item.qty <= 0) {
+            cart = cart.filter(i => i.id !== id);
+        }
+        updateCartUI();
+    }
+
+    function toggleCartModal() {
+        const modal = document.getElementById('cart-modal');
+        modal.classList.toggle('hidden');
+    }
+
+    // ส่งคำสั่งซื้อไปยัง API หลังบ้านผ่าน Cloudflare Tunnel
+    async function checkout() {
+        if (cart.length === 0) {
+            alert('กรุณาเลือกสินค้าลงตะกร้าก่อนครับ');
+            return;
+        }
+
+        const total = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+
+        try {
+            const res = await fetch(`${CLOUDFLARE_TUNNEL_URL}/api/checkout`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ items: cart, total })
+            });
+
+            const data = await res.json();
+            if (data.success) {
+                document.getElementById('order-id').innerText = data.orderId;
+                document.getElementById('qr-total').innerText = data.total.toLocaleString() + ' บาท';
+                document.getElementById('qr-modal').classList.remove('hidden');
+                toggleCartModal();
+            }
+        } catch (err) {
+            console.error('Checkout error:', err);
+            alert('เกิดข้อผิดพลาดในการสร้างออเดอร์');
+        }
+    }
+
+    function closeQrModal() {
+        document.getElementById('qr-modal').classList.add('hidden');
+    }
+
+    function confirmPayment() {
+        alert('ชำระเงินสำเร็จ! ขอบคุณที่อุดหนุน PawPaw PetShop');
+        cart = [];
+        updateCartUI();
+        closeQrModal();
+    }
+
+    // เริ่มต้นโหลดสินค้า
+    fetchProducts();
+</script>
+</body>
+</html>
